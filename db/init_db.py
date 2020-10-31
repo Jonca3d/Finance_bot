@@ -9,7 +9,6 @@ conn = psycopg2.connect(dbname=db.DATABASE,
 
 
 def init_db_tables():
-
     cursor = conn.cursor()
 
     cursor.execute('CREATE TABLE IF NOT EXISTS users('
@@ -63,7 +62,7 @@ def init_db_tables():
                    'REFERENCES "transaction_categories"("id")'
                    ');')
     conn.commit()
-    
+
     cursor.execute('CREATE TABLE IF NOT EXISTS payment_schedule('
                    'id SERIAL PRIMARY KEY,'
                    'account_id INTEGER NOT NULL, '
@@ -75,6 +74,42 @@ def init_db_tables():
 
 def init_db_basic_data():
     cursor = conn.cursor()
-    check_data = None
 
-    cursor.execute('SELECT EXISTS(SELECT*FROM ')
+    cursor.execute('SELECT EXISTS(SELECT*FROM account_types WHERE name = "debit"')
+    check_data = cursor.fetchone()
+    if not check_data[0]:
+        cursor.execute('INSERT INTO account_types(name) '
+                       'VALUES("debit");')
+        conn.commit()
+
+    cursor.execute('SELECT EXISTS(SELECT*FROM account_types WHERE name = "credit"')
+    check_data = cursor.fetchone()
+    if not check_data[0]:
+        cursor.execute('INSERT INTO account_types(name) '
+                       'VALUES("credit");')
+        conn.commit()
+
+    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = "arrival_of_money"')
+    check_data = cursor.fetchone()
+    if not check_data[0]:
+        cursor.execute('INSERT INTO transaction_types(name) '
+                       'VALUES("arrival_of_money");')
+        conn.commit()
+
+    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = "spending_of_money"')
+    check_data = cursor.fetchone()
+    if not check_data[0]:
+        cursor.execute('INSERT INTO transaction_types(name) '
+                       'VALUES("spending_of_money");')
+
+    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = "transfer_between_accounts"')
+    check_data = cursor.fetchone()
+    if not check_data[0]:
+        cursor.execute('INSERT INTO transaction_types(name) '
+                       'VALUES("transfer_between_accounts");')
+
+    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = "arrears"')
+    check_data = cursor.fetchone()
+    if not check_data[0]:
+        cursor.execute('INSERT INTO transaction_types(name) '
+                       'VALUES("arrears");')
