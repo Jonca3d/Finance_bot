@@ -19,7 +19,7 @@ def init_db_tables():
                    ');')
     conn.commit()
 
-    cursor.execute('CREATE TABLE account_types('
+    cursor.execute('CREATE TABLE IF NOT EXISTS account_types('
                    'id SERIAL PRIMARY KEY, '
                    'name VARCHAR(40) NOT NULL'
                    ');')
@@ -75,41 +75,45 @@ def init_db_tables():
 def init_db_basic_data():
     cursor = conn.cursor()
 
-    cursor.execute('SELECT EXISTS(SELECT*FROM account_types WHERE name = "debit"')
+    cursor.execute('SELECT EXISTS(SELECT*FROM account_types WHERE name = %s)', ('debit',))
     check_data = cursor.fetchone()
     if not check_data[0]:
         cursor.execute('INSERT INTO account_types(name) '
-                       'VALUES("debit");')
+                       'VALUES(%s);', ('debit',))
         conn.commit()
 
-    cursor.execute('SELECT EXISTS(SELECT*FROM account_types WHERE name = "credit"')
+    cursor.execute('SELECT EXISTS(SELECT*FROM account_types WHERE name = %s)', ('credit',))
     check_data = cursor.fetchone()
     if not check_data[0]:
         cursor.execute('INSERT INTO account_types(name) '
-                       'VALUES("credit");')
+                       'VALUES(%s);', ("credit",))
         conn.commit()
 
-    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = "arrival_of_money"')
+    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = %s)', ("arrival_of_money",))
     check_data = cursor.fetchone()
     if not check_data[0]:
         cursor.execute('INSERT INTO transaction_types(name) '
-                       'VALUES("arrival_of_money");')
+                       'VALUES(%s);', ("arrival_of_money", ))
         conn.commit()
 
-    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = "spending_of_money"')
+    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = %s)', ("spending_of_money",))
     check_data = cursor.fetchone()
     if not check_data[0]:
         cursor.execute('INSERT INTO transaction_types(name) '
-                       'VALUES("spending_of_money");')
+                       'VALUES(%s);', ("spending_of_money",))
+        conn.commit()
 
-    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = "transfer_between_accounts"')
+    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = %s)', ("transfer_between_accounts",))
     check_data = cursor.fetchone()
     if not check_data[0]:
         cursor.execute('INSERT INTO transaction_types(name) '
-                       'VALUES("transfer_between_accounts");')
+                       'VALUES(%s);', ("transfer_between_accounts",))
+        conn.commit()
 
-    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = "arrears"')
+    cursor.execute('SELECT EXISTS(SELECT*FROM transaction_types WHERE name = %s)', ("arrears",))
     check_data = cursor.fetchone()
     if not check_data[0]:
         cursor.execute('INSERT INTO transaction_types(name) '
-                       'VALUES("arrears");')
+                       'VALUES(%s);', ("arrears",))
+        conn.commit()
+
