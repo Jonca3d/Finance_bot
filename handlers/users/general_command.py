@@ -1,6 +1,7 @@
 from aiogram.dispatcher.filters import Command
 from aiogram.types import Message
 
+from keyboards.inline.options import inline_options
 from db import sql
 from loader import dp
 
@@ -43,4 +44,6 @@ async def show_options(msg: Message):
     if not sql.is_check.user(msg.from_user.id)[0]:
         sql.insert.user(msg.from_user.id, msg.from_user.first_name, msg.from_user.last_name)
 
-    
+    await msg.answer(text='General options',
+                     reply_markup=inline_options,
+                     parse_mode='HTML')
