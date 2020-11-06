@@ -41,6 +41,15 @@ class insert:
         conn.commit()
 
 
+class get_data:
+
+    @staticmethod
+    def account_type(type_name):
+        cursor = conn.cursor()
+        cursor.execute('SELECT id FROM account_types WHERE name = %s', (type_name,))
+        return cursor.fetchone()
+
+
 class fetch_data:
 
     @staticmethod
