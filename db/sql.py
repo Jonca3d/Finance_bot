@@ -41,19 +41,71 @@ class insert:
         conn.commit()
 
 
-class get_data:
+class update:
 
+    @staticmethod
+    def account_name(account_id, new_name):
+        cursor = conn.cursor()
+        cursor.execute('UPDATE accounts SET name = %s WHERE id = %s', (new_name, account_id))
+        conn.commit()
+
+    @staticmethod
+    def account_description(account_id, new_description):
+        cursor = conn.cursor()
+        cursor.execute('UPDATE accounts SET description = %s WHERE id = %s', (new_description, account_id))
+        conn.commit()
+
+
+class delete:
+
+    @staticmethod
+    def account(account_id):
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM accounts WHERE id = %s', (account_id,))
+        conn.commit()
+
+
+class get:
+    """
+    Класс содежит методы, которые возвращают единычныое значение из БД
+    """
     @staticmethod
     def account_type(type_name):
         cursor = conn.cursor()
         cursor.execute('SELECT id FROM account_types WHERE name = %s', (type_name,))
         return cursor.fetchone()
 
-
-class fetch_data:
+    @staticmethod
+    def account(account_id):
+        # TODO Осавить во входных данных только account_id
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM accounts WHERE id = %s', (account_id,))
+        return cursor.fetchone()
 
     @staticmethod
+    def account_balance(account_id):
+        cursor = conn.cursor()
+        cursor.execute('SELECT account_balance FROM accounts WHERE id = %s', (account_id,))
+        return cursor.fetchone()
+
+
+class fetch:
+    """
+    Класс содержит методы, которые возвращают список значений из БД
+    """
+    @staticmethod
     def accounts(user_id):
+        """
+        Возвращает список всех счетов пользователя
+        :param user_id:
+        :return:
+        """
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM accounts WHERE user_id = %s', (user_id,))
+        return cursor.fetchall()
+
+    @staticmethod
+    def accounts_by_type(user_id, account_type):
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM accounts WHERE (user_id = %s AND type = %s)', (user_id, account_type))
         return cursor.fetchall()
