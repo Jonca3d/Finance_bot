@@ -21,7 +21,12 @@ async def process_show_accounts_list(call: CallbackQuery):
     await call.message.edit_reply_markup(reply_markup=None)
     inline_accounts_list = InlineKeyboardMarkup()
 
+    for account in sql.fetch_data.accounts(call.from_user.id):
+        inline_accounts_list.add(InlineKeyboardButton(text=f'{account[1]}',
+                                                      callback_data=f'accounts_list:{account[0]}'))
+
     inline_accounts_list.add(InlineKeyboardButton(text='Добавить новый счет', callback_data='add_new_account'))
+    inline_accounts_list.insert(InlineKeyboardButton(text='Назад', callback_data='cancel_account_list'))
 
     await call.message.answer(text='Список счетов', reply_markup=inline_accounts_list)
 
@@ -39,7 +44,7 @@ async def process_add_new_account(call: CallbackQuery):
 @dp.message_handler(state=State_add_account.are_you_wont_to_subscribe, content_types=types.ContentType.TEXT)
 async def process_are_you_wont_to_subscribe(msg: Message, state: FSMContext):
     if msg.text.lower() == 'да':
-        await state.update_data(user=msg.from_user.id)
+        await state.update_data(user_id=msg.from_user.id)
         await msg.answer('Введите название счета', reply_markup=ReplyKeyboardRemove())
         await State_add_account.what_is_account_title.set()
     elif msg.text.lower() == 'нет':
@@ -65,12 +70,12 @@ async def process_what_is_account_title(msg: Message, state: FSMContext):
 @dp.message_handler(state=State_add_account.what_is_account_type, content_types=types.ContentType.TEXT)
 async def process_what_is_account_type(msg: Message, state: FSMContext):
     if msg.text.lower() == 'дебетовый':
-        await state.update_data(account_type='debit')
+        await state.update_data(account_type=sql.get_data.account_type('debit')[0])
         await msg.answer('Остаток на счете', reply_markup=ReplyKeyboardRemove())
         await State_add_account.what_is_the_balance_on_the_account.set()
     elif msg.text.lower() == 'кредитный':
-        await state.update_data(account_type='credit')
-        await msg.answer('Остаток на счете', reply_markup=ReplyKeyboardRemove())
+        await state.update_data(account_type=sql.get_data.account_type('credit')[0])
+        await msg.answer('Размер задолжности', reply_markup=ReplyKeyboardRemove())
         await State_add_account.what_is_the_balance_on_the_account.set()
     else:
         await msg.answer('Нажмите на кнопку ниже')
@@ -99,7 +104,7 @@ async def process_do_you_want_add_description(msg: Message, state: FSMContext):
         await State_add_account.description.set()
     elif msg.text.lower() == 'нет':
         account_data = await state.get_data()
-        sql.insert.account(account_data['user'],
+        sql.insert.account(account_data['user_id'],
                            account_data['title'],
                            account_data['account_balance'],
                            account_data['account_type'])
@@ -114,9 +119,10 @@ async def process_add_description_for_new_account(msg: Message, state: FSMContex
     await state.update_data(description=msg.text)
 
     account_data = await state.get_data()
-    sql.insert.account(account_data['user'],
+    sql.insert.account(account_data['user_id'],
                        account_data['title'],
                        account_data['account_balance'],
                        account_data['account_type'],
                        account_data['description'])
     await msg.answer('Новый счет успешно добавлен')
+    state.finish()
