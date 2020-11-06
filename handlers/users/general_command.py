@@ -1,5 +1,5 @@
 from aiogram.dispatcher.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 from keyboards.inline.options import inline_options
 from db import sql
@@ -47,3 +47,8 @@ async def show_options(msg: Message):
     await msg.answer(text='General options',
                      reply_markup=inline_options,
                      parse_mode='HTML')
+
+
+@dp.callback_query_handler(text_contains='cancel_menu')
+async def process_cancel_menu(call: CallbackQuery):
+    await call.message.edit_reply_markup(reply_markup=None)
