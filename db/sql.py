@@ -36,8 +36,9 @@ class insert:
         :return:
         """
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO accounts (name, user_id, description, account_balance, type) '
-                       'VALUES(%s, %s, %s, %s, %s)', (name, user_id, description, account_balance, type_account))
+        cursor.execute('INSERT INTO accounts (name, user_id, description, account_balance, type, status) '
+                       'VALUES(%s, %s, %s, %s, %s, True)',
+                       (name, user_id, description, account_balance, type_account))
         conn.commit()
 
 
@@ -53,6 +54,21 @@ class update:
     def account_description(account_id, new_description):
         cursor = conn.cursor()
         cursor.execute('UPDATE accounts SET description = %s WHERE id = %s', (new_description, account_id))
+        conn.commit()
+
+    @staticmethod
+    def account_status(account_id, status: bool):
+        """
+        Изменяет статус счета.
+        Передача в status False равносильна удалению счета.
+        Счет становится недоступным для редактирования,
+        проведения транзакций и пропадает из меню счетов.
+        :param account_id: Идентификатор счета
+        :param status: Принимает True или False. False для удаления чсета из меню счетов
+        :return:
+        """
+        cursor = conn.cursor()
+        cursor.execute('UPDATE accounts SET status = %s WHERE id = %s', (status, account_id))
         conn.commit()
 
 

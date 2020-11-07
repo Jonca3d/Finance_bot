@@ -227,9 +227,8 @@ async def process_remove_account(call: CallbackQuery, state: FSMContext):
 async def process_do_you_want_to_delete_the_account(msg: Message, state: FSMContext):
     data = await state.get_data()
     if msg.text.lower() == 'да':
-        print(data['account_balance'])
         if int(data['account_balance']) == 0:
-            sql.delete.account(data['account_id'])
+            sql.update.account_status(data['account_id'], False)
             await msg.answer('Счет успешно удален', reply_markup=ReplyKeyboardRemove())
             await state.finish()
         else:

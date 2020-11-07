@@ -31,6 +31,7 @@ def init_db_tables():
                    'description VARCHAR(250), '
                    'account_balance INTEGER NOT NULL, '
                    'type INTEGER NOT NULL, '
+                   'status BOOLEAN NOT NULL, '
                    'FOREIGN KEY("user_id") REFERENCES "users"("telegram_id"), '
                    'FOREIGN KEY("type") REFERENCES "account_types"("id")'
                    ');')
