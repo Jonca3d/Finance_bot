@@ -32,7 +32,7 @@ async def process_show_accounts_list(call: CallbackQuery):
     await call.message.edit_reply_markup(reply_markup=None)
     inline_accounts_list = InlineKeyboardMarkup()
 
-    for account in sql.fetch.accounts(call.from_user.id):
+    for account in sql.fetch.accounts_by_status(call.from_user.id, True):
         inline_accounts_list.add(InlineKeyboardButton(text=f'{account[1]}',
                                                       callback_data=f'accounts_list:{account[0]}'))
 
