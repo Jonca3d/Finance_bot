@@ -138,3 +138,10 @@ class fetch:
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM accounts WHERE (user_id = %s AND status = %s)', (user_id, status))
         return cursor.fetchall()
+
+    @staticmethod
+    def transaction_categories_by_type(type_name: str):
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM transaction_categories WHERE transaction_type = '
+                       '(SELECT id FROM transaction_types WHERE name = %s)', (type_name,))
+        return cursor.fetchall()
