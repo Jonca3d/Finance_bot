@@ -125,3 +125,16 @@ class fetch:
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM accounts WHERE (user_id = %s AND type = %s)', (user_id, account_type))
         return cursor.fetchall()
+
+    @staticmethod
+    def accounts_by_status(user_id, status: bool):
+        """
+        Запросить список счетов пользователя с определенным статусом:
+        Активный(True) или Не активный(False)
+        :param user_id: Идентификатор пользователя
+        :param status: True-это активные счета пользователя, False-не активные
+        :return:
+        """
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM accounts WHERE (user_id = %s AND status = %s)', (user_id, status))
+        return cursor.fetchall()
