@@ -1,6 +1,8 @@
 import psycopg2
+from psycopg2.extras import execute_values
 
 import db.config as db
+from db import sql
 
 conn = psycopg2.connect(dbname=db.DATABASE,
                         user=db.USERNAME,
@@ -15,7 +17,8 @@ def init_db_tables():
                    'telegram_id INTEGER PRIMARY KEY, '
                    'first_name VARCHAR(40), '
                    'last_name VARCHAR(40), '
-                   'timezone INTEGER'
+                   'timezone INTEGER,'
+                   'current_balance INTEGER NOT NULL'
                    ');')
     conn.commit()
 
@@ -64,7 +67,15 @@ def init_db_tables():
                    ');')
     conn.commit()
 
-    cursor.execute('CREATE TABLE IF NOT EXISTS ')
+    # В эту таблицу сохраняется значение текущего баланса пользователя после совершения каждой транзакции
+    cursor.execute('CREATE TABLE IF NOT EXISTS balance_history('
+                   'id SERIAL PRIMARY KEY, '
+                   'user_id INTEGER NOT NULL, '
+                   'balance INTEGER NOT NULL, '
+                   'timestamp INTEGER NOT NULL, '
+                   'FOREIGN KEY("user_id") REFERENCES "users"("telegram_id")'
+                   ');')
+    conn.commit()
 
     # График платежей
     # TODO Добавить возможность расписывать график платежей. Например за кредит
@@ -78,6 +89,7 @@ def init_db_tables():
 
 
 def init_db_basic_data():
+    # TODO Провести рефакторинг (объединить запросы по добавлению записей в одну таблицу)
     cursor = conn.cursor()
 
     cursor.execute('SELECT EXISTS(SELECT*FROM account_types WHERE name = %s)', ('debit',))
@@ -120,5 +132,31 @@ def init_db_basic_data():
     if not check_data[0]:
         cursor.execute('INSERT INTO transaction_types(name) '
                        'VALUES(%s);', ("arrears",))
+        conn.commit()
+
+    if sql.is_check.transaction_categories()[0] == 0:
+        data = [("Продукты", "Покупка продуктов питания", "2"),
+                ("Жильё", "Оплата жилья. Аренда. Комунальные услуги", "2"),
+                ("Одежда", "Покупка одежды, обуви и т.д.", "2"),
+                ("Хобби", "Приобретение предметов для занятий своим хобби", "2"),
+                ("Кафе/Рестораны", "Посещение кафе или ресторана", "2"),
+                ("Транспорт", "Расходы на проезд или на личный транспорт", "2"),
+                ("Телефон", "Оплата услуг телефонии", "2"),
+                ("Интернет", "Оплата услуг интернет", "2"),
+                ("Быт", "Расходы на приобретени бытовой химии или других предметов для поддержания чистоты в доме", "2"),
+                ("Лекарства", "Расходы на лекарства при болезни", "2"),
+                ("Здоровье", "Приобретение БАДов или витаминов или средств по уходу за собой", "2"),
+                ("Подарки", "Расходы на подарки для друзей, коллег и близких", "2"),
+                ("Развлечения", "Посещение клубов, кино, игровые автоматы", "2"),
+                ("Кредит", "Выплаты по кредиту", "2"),
+                ("Отдых", "Расходы на отпуск. Например приобретение тура или покупка билета", "2"),
+                ("Образование", "Приобретение курсов, посещение тренингов, репетитор", "2"),
+                ("Книги", "Покупка книг", "2"),
+                ("Зарплата", "Зарплата", "1"),
+                ("Аванс", "Аванс", "1"),
+                ("Подарок", "Подарок", "1")]
+        print('I am here')
+        execute_values(cursor, 'INSERT INTO transaction_categories(name, description, transaction_type) '
+                               'VALUES %s', data)
         conn.commit()
 
