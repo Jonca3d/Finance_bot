@@ -15,14 +15,31 @@ class is_check:
         cursor.execute('SELECT EXISTS(SELECT * FROM users WHERE telegram_id = %s);', (user_id,))
         return cursor.fetchone()
 
+    @staticmethod
+    def transaction_categories():
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM transaction_categories')
+        return cursor.fetchone()
+
+    @staticmethod
+    def account(user_id):
+        cursor = conn.cursor()
+        cursor.execute('SELECT EXISTS(SELECT * FROM accounts WHERE (user_id = %s AND status = %s))',
+                       (user_id, True))
+        return cursor.fetchone()
+
 
 class insert:
 
     @staticmethod
-    def user(user_id, first_name, last_name):
+    def user(user_id, first_name, last_name, time_stamp):
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO users (telegram_id, first_name, last_name) '
-                       'VALUES(%s, %s, %s)', (user_id, first_name, last_name))
+        cursor.execute('INSERT INTO users (telegram_id, first_name, last_name, current_balance) '
+                       'VALUES(%s, %s, %s, %s)', (user_id, first_name, last_name, 0))
+        conn.commit()
+
+        cursor.execute('INSERT INTO balance_history (user_id, balance, timestamp) '
+                       'VALUES(%s, 0, %s)', (user_id, time_stamp))
         conn.commit()
 
     @staticmethod
@@ -56,6 +73,13 @@ class insert:
                        'VALUES(%s, %s, %s, %s)', (user_id, transaction_category, amount, time_stamp))
         conn.commit()
 
+    @staticmethod
+    def balance_history_record(user_id, balance, time_stamp):
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO balance_history (user_id, balance, timestamp) '
+                       'VALUES(%s, %s, %s)', (user_id, balance, time_stamp))
+        conn.commit()
+
 
 class update:
 
@@ -84,6 +108,22 @@ class update:
         """
         cursor = conn.cursor()
         cursor.execute('UPDATE accounts SET status = %s WHERE id = %s', (status, account_id))
+        conn.commit()
+
+    @staticmethod
+    def account_balance(account_id, amount):
+        cursor = conn.cursor()
+        new_balance = int(get.account_balance(account_id)[0]) + int(amount)
+        cursor.execute('UPDATE accounts SET account_balance = %s WHERE id = %s',
+                       (new_balance, account_id))
+        conn.commit()
+
+    @staticmethod
+    def overall_balance(user_id, amount):
+        cursor = conn.cursor()
+        new_balance = int(get.overall_balance(user_id)[0]) + int(amount)
+        cursor.execute('UPDATE users SET current_balance = %s WHERE telegram_id = %s',
+                       (new_balance, user_id))
         conn.commit()
 
 
@@ -117,6 +157,12 @@ class get:
     def account_balance(account_id):
         cursor = conn.cursor()
         cursor.execute('SELECT account_balance FROM accounts WHERE id = %s', (account_id,))
+        return cursor.fetchone()
+
+    @staticmethod
+    def overall_balance(user_id):
+        cursor = conn.cursor()
+        cursor.execute('SELECT current_balance FROM users WHERE telegram_id = %s', (user_id,))
         return cursor.fetchone()
 
 
