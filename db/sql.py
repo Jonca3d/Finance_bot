@@ -41,6 +41,21 @@ class insert:
                        (name, user_id, description, account_balance, type_account))
         conn.commit()
 
+    @staticmethod
+    def transaction(user_id, transaction_category, amount, time_stamp):
+        """
+        Метод добавляет в БД запись о Транзакции
+        :param user_id: ID пользователя
+        :param transaction_category: Категория транзакции
+        :param amount: Сумма транзакции
+        :param time_stamp: Временная метка
+        :return:
+        """
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO transactions (user_id, transaction_category, amount, timestamp) '
+                       'VALUES(%s, %s, %s, %s)', (user_id, transaction_category, amount, time_stamp))
+        conn.commit()
+
 
 class update:
 
