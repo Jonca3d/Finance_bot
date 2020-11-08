@@ -64,6 +64,10 @@ def init_db_tables():
                    ');')
     conn.commit()
 
+    cursor.execute('CREATE TABLE IF NOT EXISTS ')
+
+    # График платежей
+    # TODO Добавить возможность расписывать график платежей. Например за кредит
     cursor.execute('CREATE TABLE IF NOT EXISTS payment_schedule('
                    'id SERIAL PRIMARY KEY,'
                    'account_id INTEGER NOT NULL, '
