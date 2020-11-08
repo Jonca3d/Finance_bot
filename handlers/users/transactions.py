@@ -10,30 +10,13 @@ from aiogram.types import (CallbackQuery,
                            ReplyKeyboardMarkup,
                            Message,
                            ReplyKeyboardRemove)
+from handlers.service import database
 from db import sql
 from loader import dp
 
 
 class Transaction_states(StatesGroup):
     transaction_amount = State()
-
-
-@dp.message_handler(Command('transaction'))
-async def transaction(msg: Message):
-    """
-    При вызове этого хэгдлера предлагается выбрать тип транзакции:
-    Приход-поступление средств
-    Расход-какие либо траты
-    Перевод между счетами-когда мы хотим перевести деньги с одного счета на другой
-    :param msg:
-    :return:
-    """
-    inline_transaction_btn = InlineKeyboardMarkup()
-    inline_transaction_btn.add(InlineKeyboardButton(text='Приход', callback_data='transaction:arrival_of_money'))
-    inline_transaction_btn.add(InlineKeyboardButton(text='Расход', callback_data='transaction:spending_of_money'))
-    inline_transaction_btn.add(InlineKeyboardButton(text='Перевод между счетами',
-                                                    callback_data='transaction:transfer_between_accounts'))
-    await msg.answer(text='Выберите тип транзакции', reply_markup=inline_transaction_btn)
 
 
 # TODO написать хэндлер для операции перемещения средств между счетами
@@ -49,23 +32,39 @@ async def process_transaction(call: CallbackQuery, state: FSMContext):
     """
     await call.message.edit_reply_markup(reply_markup=None)
     transaction_type = call.data.split(':')[1]
-    inline_transaction_category_btn = InlineKeyboardMarkup()
+    await state.update_data(transaction_type=transaction_type)
+    inline_transaction_type_btn = InlineKeyboardMarkup()
     for transaction_category in sql.fetch.transaction_categories_by_type(f'{transaction_type}'):
-        inline_transaction_category_btn.add(InlineKeyboardButton(text=f'{transaction_category[1]}',
-                                                                 callback_data=f'trans_category'
-                                                                               f':{transaction_category[0]}'
-                                                                               f':{transaction_category[1]}'
-                                                                               f''))
-        print(transaction_category)
-    inline_transaction_category_btn.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_menu'))
-    await call.message.answer(text='Выберите категорию', reply_markup=inline_transaction_category_btn)
+        inline_transaction_type_btn.add(InlineKeyboardButton(text=f'{transaction_category[1]}',
+                                                             callback_data=f'trans_category'
+                                                                           f':{transaction_category[0]}'
+                                                                           f':{transaction_category[1]}'
+                                                                           f''))
+    inline_transaction_type_btn.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_menu'))
+    await call.message.answer(text='Выберите категорию', reply_markup=inline_transaction_type_btn)
 
 
 @dp.callback_query_handler(text_contains='trans_category:')
-async def process_transaction_amount(call: CallbackQuery, state: FSMContext):
+async def process_transaction_category(call: CallbackQuery, state: FSMContext):
     transaction_category = call.data.split(':')[1]
     await state.update_data(transaction_category=transaction_category)
     await state.update_data(transaction_category_name=call.data.split(':')[2])
+    await call.message.edit_reply_markup(reply_markup=None)
+    inline_account_list_btn = InlineKeyboardMarkup()
+    for transaction_account in sql.fetch.accounts_by_status(call.from_user.id, True):
+        inline_account_list_btn.add(InlineKeyboardButton(text=f'{transaction_account[1]}',
+                                                         callback_data=f'trans_account'
+                                                                       f':{transaction_account[0]}'
+                                                                       f':{transaction_account[1]}'
+                                                                       f''))
+    await call.message.answer(text='Выберите счет', reply_markup=inline_account_list_btn)
+
+
+@dp.callback_query_handler(text_contains='trans_account:')
+async def process_transaction_amount(call: CallbackQuery, state: FSMContext):
+    transaction_account = call.data.split(':')[1]
+    await state.update_data(transaction_account=transaction_account)
+    await state.update_data(transaction_account_name=call.data.split(':')[2])
     await call.message.edit_reply_markup(reply_markup=None)
     await call.message.answer(text='Введите сумму')
     await Transaction_states.transaction_amount.set()
@@ -76,14 +75,25 @@ async def process_transaction_final(msg: Message, state: FSMContext):
     if msg.text.isdigit():
         await state.update_data(amount=msg.text)
 
-    transaction_data = await state.get_data()
-    print(transaction_data)
-    sql.insert.transaction(msg.from_user.id,
-                           transaction_data['transaction_category'],
-                           transaction_data['amount'],
-                           int(time.time()))
-    await msg.answer(text='Запись добавлена\n'
-                          f'{transaction_data["transaction_category_name"]}: '
-                          f'{transaction_data["amount"]}')
-    await state.finish()
+        transaction_data = await state.get_data()
+        amount = transaction_data['amount']
+        if transaction_data['transaction_type'] == 'spending_of_money':
+            amount = int(amount) * -1
+        # sql.insert.transaction(msg.from_user.id,
+        #                        transaction_data['transaction_category'],
+        #                        amount,
+        #                        int(time.time()))
+        await msg.answer(text='Запись добавлена\n'
+                              f'Счет: {transaction_data["transaction_account_name"]}\n'
+                              f'{transaction_data["transaction_category_name"]}: '
+                              f'{transaction_data["amount"]}')
+        database.add_data.transaction(msg.from_user.id,
+                                      transaction_data['transaction_account'],
+                                      transaction_data['transaction_category'],
+                                      amount,
+                                      int(time.time()))
+        await state.finish()
+    else:
+        await msg.answer(text='Некорректнный ввод')
+        return
 # TODO завершить диалог для совершения Транзакции
