@@ -1,3 +1,5 @@
+import time
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -8,6 +10,7 @@ from aiogram.types import (CallbackQuery,
                            Message,
                            ReplyKeyboardRemove)
 from db import sql
+from handlers.service import database
 from loader import dp
 
 
@@ -117,11 +120,14 @@ async def process_do_you_want_add_description(msg: Message, state: FSMContext):
         await State_add_account.description.set()
     elif msg.text.lower() == 'нет':
         account_data = await state.get_data()
+        # TODO добавить sql.insert в database.add_data.account
         sql.insert.account(account_data['user_id'],
                            account_data['title'],
                            account_data['account_balance'],
                            account_data['account_type'])
+        database.add_data.account(msg.from_user.id, account_data['account_balance'], int(time.time()))
         await msg.answer('Новый счет успешно добавлен', reply_markup=ReplyKeyboardRemove())
+        await state.finish()
     else:
         await msg.answer('Нажмите на кнопку ниже')
         return
@@ -137,7 +143,8 @@ async def process_add_description_for_new_account(msg: Message, state: FSMContex
                        account_data['account_balance'],
                        account_data['account_type'],
                        account_data['description'])
-    await msg.answer('Новый счет успешно добавлен')
+    database.add_data.account(msg.from_user.id, account_data['account_balance'], int(time.time()))
+    await msg.answer('Новый счет успешно добавлен', reply_markup=ReplyKeyboardRemove())
     await state.finish()
 
 
