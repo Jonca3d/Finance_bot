@@ -28,9 +28,10 @@ async def process_start(msg: Message):
 
 @dp.message_handler(Command('help'))
 async def show_help_message(msg: Message):
-    # TODO Придумать текст сообщения
-    #  вынести сообщение в отдельный файл
-    await msg.answer(text='help')
+    await msg.answer(text='Введите /transaction для добавления новой транзакции\n'
+                          'Введите /options для открытия опций\n'
+                          'Введите /info для просмотра информации по счетам и общему балансу\n'
+                          '/help для вызова этой справки')
 
 
 @dp.message_handler(Command('options'))
@@ -74,6 +75,11 @@ async def transaction(msg: Message):
         await msg.answer(text='Выберите тип транзакции', reply_markup=inline_transaction_btn)
     else:
         await msg.answer(text='У вас пока нет ни одного счета. Введите /options и добавте хотябы один счет')
+
+
+@dp.message_handler(Command('info'))
+async def show_info_about_accounts(msg: Message):
+    pass
 
 
 @dp.callback_query_handler(text_contains='cancel_menu')
