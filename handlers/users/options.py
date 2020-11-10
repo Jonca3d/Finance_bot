@@ -242,11 +242,15 @@ async def process_do_you_want_to_delete_the_account(msg: Message, state: FSMCont
             inline_accounts_btn = InlineKeyboardMarkup()
             print("type: " + str(data['account_type']))
             for account in sql.fetch.accounts_by_type(msg.from_user.id, data['account_type']):
-                if account[0] != data['account_id']:
+                if account[0] != data['account_id'] and account[6] is True:
                     inline_accounts_btn.add(InlineKeyboardButton(text=f'{account[1]}',
-                                                                 callback_data=f'to_which_account_to_transfer:{account[0]}'))
+                                                                 callback_data=f'to_which_account_to_transfer'
+                                                                               f':{account[0]}'
+                                                                               f':{data["account_id"]}'))
             inline_accounts_btn.add(InlineKeyboardButton(text='Просто удалить всю сумму',
-                                                         callback_data=f'to_which_account_to_transfer:0'))
+                                                         callback_data=f'to_which_account_to_transfer'
+                                                                       f':0'
+                                                                       f':{data["account_id"]}'))
             inline_accounts_btn.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_menu'))
             # TODO вставить осознанный текст в ответ
             await msg.answer(text='qwe', reply_markup=ReplyKeyboardRemove())
@@ -259,3 +263,21 @@ async def process_do_you_want_to_delete_the_account(msg: Message, state: FSMCont
     else:
         await msg.answer(text='Нажмите да или нет')
         return
+
+
+@dp.callback_query_handler(text_contains='to_which_account_to_transfer:')
+async def to_which_to_transfer_account(call: CallbackQuery):
+    to_account = call.data.split(':')[1]
+    from_account = call.data.split(':')[2]
+
+    if int(to_account) != 0:
+        database.transfer.all_money_and_remove_account(call.from_user.id,
+                                                       to_account,
+                                                       from_account,
+                                                       int(time.time()))
+        await call.message.edit_reply_markup(reply_markup=None)
+        await call.message.answer(text='Счет удален. Вся сумма перемещена на новый счет')
+    else:
+        database.delete.account(call.from_user.id, from_account, int(time.time()))
+        await call.message.edit_reply_markup(reply_markup=None)
+        await call.message.answer(text='Счет успешно удален')
