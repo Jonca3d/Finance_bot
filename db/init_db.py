@@ -154,8 +154,8 @@ def init_db_basic_data():
                 ("Книги", "Покупка книг", "2"),
                 ("Зарплата", "Зарплата", "1"),
                 ("Аванс", "Аванс", "1"),
-                ("Подарок", "Подарок", "1")]
-        print('I am here')
+                ("Подарок", "Подарок", "1"),
+                ("Перевод между счетам", "Перевод между счетами", "3")]
         execute_values(cursor, 'INSERT INTO transaction_categories(name, description, transaction_type) '
                                'VALUES %s', data)
         conn.commit()
