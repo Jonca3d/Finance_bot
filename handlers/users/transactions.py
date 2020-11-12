@@ -17,6 +17,7 @@ from loader import dp
 
 class Transaction_states(StatesGroup):
     transaction_amount = State()
+    transfer_amount = State()
 
 
 # TODO написать хэндлер для операции перемещения средств между счетами
@@ -97,3 +98,60 @@ async def process_transaction_final(msg: Message, state: FSMContext):
         await msg.answer(text='Некорректнный ввод')
         return
 # TODO завершить диалог для совершения Транзакции
+
+
+@dp.callback_query_handler(text_contains='transfer_between_accounts')
+async def transfer_between_accounts(call: CallbackQuery):
+    await call.message.edit_reply_markup(reply_markup=None)
+    accounts_list = sql.fetch.accounts_by_status(call.from_user.id, True)
+
+    inline_accounts_list_btn = InlineKeyboardMarkup()
+    for account in accounts_list:
+        inline_accounts_list_btn.add(InlineKeyboardButton(text=f'{account[1]}',
+                                                          callback_data=f'transfer_from:{account[0]}'))
+    await call.message.answer(text='Выберите счет с которого хотите перенести средства',
+                              reply_markup=inline_accounts_list_btn)
+
+
+@dp.callback_query_handler(text_contains='transfer_from:')
+async def transfer_from(call: CallbackQuery, state: FSMContext):
+    await call.message.edit_reply_markup(reply_markup=None)
+    from_account = call.data.split(':')[1]
+    await state.update_data(from_account=from_account)
+    print(from_account)
+    accounts_list = database.get_data.accounts_list(call.from_user.id, exclude_accounts=[int(from_account)])
+
+    inline_accounts_list_btn = InlineKeyboardMarkup()
+    for account in accounts_list:
+        print(account)
+        inline_accounts_list_btn.add(InlineKeyboardButton(text=f'{account[1]}',
+                                                          callback_data=f'transfer_in:{account[0]}:'))
+
+    await call.message.answer(text='Выбкрите куда вы хотите перевести стредства',
+                              reply_markup=inline_accounts_list_btn)
+
+
+@dp.callback_query_handler(text_contains='transfer_in:')
+async def transfer_in(call: CallbackQuery, state: FSMContext):
+    await call.message.edit_reply_markup(reply_markup=None)
+    to_account = call.data.split(':')[1]
+    await state.update_data(to_account=to_account)
+    await Transaction_states.transfer_amount.set()
+    await call.message.answer(text='Введите сумму перевода')
+
+
+@dp.message_handler(state=Transaction_states.transfer_amount, content_types=types.ContentType.TEXT)
+async def transfer_amount(msg: Message, state: FSMContext):
+    if msg.text.isdigit():
+        transfer_data = await state.get_data()
+        database.transfer.money_transfer(msg.from_user.id,
+                                         transfer_data['to_account'],
+                                         transfer_data['from_account'],
+                                         int(msg.text),
+                                         int(time.time()))
+        await state.finish()
+        await msg.answer('Перевод успешно завершен')
+    else:
+        await msg.answer('Введите корректную сумму')
+        return
+
