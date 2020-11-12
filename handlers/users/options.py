@@ -120,12 +120,7 @@ async def process_do_you_want_add_description(msg: Message, state: FSMContext):
         await State_add_account.description.set()
     elif msg.text.lower() == 'нет':
         account_data = await state.get_data()
-        # TODO добавить sql.insert в database.add_data.account
-        sql.insert.account(account_data['user_id'],
-                           account_data['title'],
-                           account_data['account_balance'],
-                           account_data['account_type'])
-        database.add_data.account(msg.from_user.id, account_data['account_balance'], int(time.time()))
+        database.add_data.account(msg.from_user.id, account_data, int(time.time()))
         await msg.answer('Новый счет успешно добавлен', reply_markup=ReplyKeyboardRemove())
         await state.finish()
     else:
@@ -138,12 +133,7 @@ async def process_add_description_for_new_account(msg: Message, state: FSMContex
     await state.update_data(description=msg.text)
 
     account_data = await state.get_data()
-    sql.insert.account(account_data['user_id'],
-                       account_data['title'],
-                       account_data['account_balance'],
-                       account_data['account_type'],
-                       account_data['description'])
-    database.add_data.account(msg.from_user.id, account_data['account_balance'], int(time.time()))
+    database.add_data.account(msg.from_user.id, account_data, int(time.time()))
     await msg.answer('Новый счет успешно добавлен', reply_markup=ReplyKeyboardRemove())
     await state.finish()
 
@@ -240,8 +230,7 @@ async def process_do_you_want_to_delete_the_account(msg: Message, state: FSMCont
             await state.finish()
         else:
             inline_accounts_btn = InlineKeyboardMarkup()
-            print("type: " + str(data['account_type']))
-            for account in sql.fetch.accounts_by_type(msg.from_user.id, data['account_type']):
+            for account in sql.fetch.accounts_by_status(msg.from_user.id, True):
                 if account[0] != data['account_id'] and account[6] is True:
                     inline_accounts_btn.add(InlineKeyboardButton(text=f'{account[1]}',
                                                                  callback_data=f'to_which_account_to_transfer'
@@ -252,10 +241,8 @@ async def process_do_you_want_to_delete_the_account(msg: Message, state: FSMCont
                                                                        f':0'
                                                                        f':{data["account_id"]}'))
             inline_accounts_btn.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_menu'))
-            # TODO вставить осознанный текст в ответ
-            await msg.answer(text='qwe', reply_markup=ReplyKeyboardRemove())
-            await msg.answer(text='На какой счет вы хотите перенести остаток?',
-                             reply_markup=inline_accounts_btn)
+            await msg.answer(text='На какой счет вы хотите перенести остаток?', reply_markup=ReplyKeyboardRemove())
+            await msg.answer(text='Список счетов', reply_markup=inline_accounts_btn)
             await state.finish()
     elif msg.text.lower() == 'нет':
         await msg.answer(text='Отмена', reply_markup=ReplyKeyboardRemove())
