@@ -118,12 +118,10 @@ async def transfer_from(call: CallbackQuery, state: FSMContext):
     await call.message.edit_reply_markup(reply_markup=None)
     from_account = call.data.split(':')[1]
     await state.update_data(from_account=from_account)
-    print(from_account)
     accounts_list = database.get_data.accounts_list(call.from_user.id, exclude_accounts=[int(from_account)])
 
     inline_accounts_list_btn = InlineKeyboardMarkup()
     for account in accounts_list:
-        print(account)
         inline_accounts_list_btn.add(InlineKeyboardButton(text=f'{account[1]}',
                                                           callback_data=f'transfer_in:{account[0]}:'))
 

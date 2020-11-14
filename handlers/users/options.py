@@ -203,9 +203,7 @@ async def process_set_new_name_of_account(msg: Message, state: FSMContext):
 @dp.callback_query_handler(text_contains='remove_account:')
 async def process_remove_account(call: CallbackQuery, state: FSMContext):
     await call.message.edit_reply_markup(reply_markup=None)
-    # account_id = call.data.split(':')[1]
     account = sql.get.account(call.data.split(':')[1])
-    # print(account)
     await state.update_data(account_id=account[0])
     await state.update_data(account_balance=account[4])
     await state.update_data(account_type=account[5])

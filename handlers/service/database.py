@@ -92,7 +92,6 @@ class get_data:
         :param exclude_accounts: Принимает список с ID счетов для исключения их из результирующего списка
         :return:
         """
-        print(f'EXC: {exclude_accounts}')
         accounts_list: list
         if only_active:
             accounts_list = sql.fetch.accounts_by_status(user_id, True)
