@@ -1,0 +1,22 @@
+version: '3'
+services:
+  db:
+    image: postgres:12.4-alpine
+    container_name: postgres_finance_bot
+    ports:
+      - 5430:5432
+    volumes:
+    - ./pg_data:/var/lib/postgresql/data/pgdata
+    environment:
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: telegram_bot_finance
+      PGDATA: /var/lib/postgresql/data/pgdata
+    restart: always
+  app:
+    build: .
+    container_name: telegram_bot_finance
+    environment:
+      POSTGRES_HOST: db
+    restart: always
+    links:
+      - db
