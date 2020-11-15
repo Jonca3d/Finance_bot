@@ -147,6 +147,12 @@ class get:
         return cursor.fetchone()
 
     @staticmethod
+    def account_name(account_id):
+        cursor = conn.cursor()
+        cursor.execute('SELECT name FROM accounts WHERE id = %s', (account_id,))
+        return cursor.fetchone()[0]
+
+    @staticmethod
     def account(account_id):
         # TODO Осавить во входных данных только account_id
         cursor = conn.cursor()
