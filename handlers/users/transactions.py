@@ -43,7 +43,7 @@ async def process_transaction(call: CallbackQuery, state: FSMContext):
                                                                            f''))
     inline_transaction_type_btn.add(InlineKeyboardButton(text='Отмена', callback_data='cancel_menu'))
     await call.message.answer(text='Выберите категорию', reply_markup=inline_transaction_type_btn)
-
+    
 
 @dp.callback_query_handler(text_contains='trans_category:')
 async def process_transaction_category(call: CallbackQuery, state: FSMContext):
@@ -56,7 +56,7 @@ async def process_transaction_category(call: CallbackQuery, state: FSMContext):
         inline_account_list_btn.add(InlineKeyboardButton(text=f'{transaction_account[1]}',
                                                          callback_data=f'trans_account'
                                                                        f':{transaction_account[0]}'
-                                                                       f':{transaction_account[1]}'
+                                                                       # f':{transaction_account[1]}'
                                                                        f''))
     await call.message.answer(text='Выберите счет', reply_markup=inline_account_list_btn)
 
@@ -65,7 +65,9 @@ async def process_transaction_category(call: CallbackQuery, state: FSMContext):
 async def process_transaction_amount(call: CallbackQuery, state: FSMContext):
     transaction_account = call.data.split(':')[1]
     await state.update_data(transaction_account=transaction_account)
-    await state.update_data(transaction_account_name=call.data.split(':')[2])
+    # await state.update_data(transaction_account_name=call.data.split(':')[2])
+    await state.update_data(transaction_account_name=sql.get.account_name(transaction_account))
+
     await call.message.edit_reply_markup(reply_markup=None)
     await call.message.answer(text='Введите сумму')
     await Transaction_states.transaction_amount.set()
